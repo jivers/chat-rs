@@ -1,0 +1,10 @@
+[package]
+name = "chat-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+serde = { version = "1.0.219", features = ["derive"] }
+termimad = "0.33.0"
+ureq = { version = "3.0.12", features = ["json"] }
