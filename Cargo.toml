@@ -3,6 +3,10 @@ name = "chat-rs"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "c"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0.98"
 serde = { version = "1.0.219", features = ["derive"] }

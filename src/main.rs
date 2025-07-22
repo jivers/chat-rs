@@ -20,7 +20,6 @@ impl ChatRequest {
 
 #[derive(Deserialize, Debug)]
 struct Response {
-    id: String,
     output: Vec<Output>,
 }
 
@@ -41,7 +40,6 @@ struct Output {
 #[derive(Deserialize, Debug)]
 struct Content {
     #[serde(rename = "type")]
-    kind: String, // should be enum
     text: String,
 }
 
@@ -50,10 +48,10 @@ fn main() -> Result<()> {
         Some(x) => x,
         None => "gimme the beat boy".to_string(),
     };
+
     let chat_request = ChatRequest::new(input);
 
     let openai_api_key = env::var("OPENAI_API_KEY")?;
-    println!("{}", openai_api_key);
     let mut response = ureq::post("https://api.openai.com/v1/responses")
         .header("Authorization", format!("Bearer {}", openai_api_key))
         .header("Content-Type", "application/json")
