@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
 use ureq;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct ChatRequest {
     model: String,
     input: String,
@@ -12,7 +12,7 @@ struct ChatRequest {
 impl ChatRequest {
     fn new(input: String) -> ChatRequest {
         ChatRequest {
-            model: "gpt-4.1".to_string(),
+            model: "gpt-4o".to_string(),
             input
         }
     }
@@ -39,7 +39,6 @@ struct Output {
 
 #[derive(Deserialize, Debug)]
 struct Content {
-    #[serde(rename = "type")]
     text: String,
 }
 
