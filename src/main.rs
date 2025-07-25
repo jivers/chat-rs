@@ -3,43 +3,54 @@ use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
 use ureq;
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+enum Role {
+    Developer,
+    User,
+    Assistant,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Message {
+    role: Role,
+    content: String,
+}
+
 #[derive(Serialize, Debug)]
 struct ChatRequest {
     model: String,
-    input: String,
+    messages: Vec<Message>,
 }
 
 impl ChatRequest {
-    fn new(input: String) -> ChatRequest {
+    fn new(content: String) -> ChatRequest {
         ChatRequest {
-            model: "gpt-4o".to_string(),
-            input
+            model: "gpt-4.1".to_string(),
+            messages: vec![Message {
+                role: Role::User,
+                content,
+            }]
         }
     }
+
 }
 
 #[derive(Deserialize, Debug)]
-struct Response {
-    output: Vec<Output>,
+struct Choice {
+    message: Message,
 }
 
-impl Response {
-    fn text(&self) -> Result<String> {
-        let output = self.output.get(0).context("no outputs")?;
-        let content = output.content.get(0).context("no content")?; 
+#[derive(Deserialize, Debug)]
+struct ChatResponse {
+    choices: Vec<Choice>,
+}
 
-        Ok(content.text.clone())
+impl ChatResponse {
+    fn first(&self) -> Result<String> {
+        let first_choice = self.choices.get(0).context("no first choice exists")?;
+        Ok(first_choice.message.content.clone())
     }
-}
-
-#[derive(Deserialize, Debug)]
-struct Output {
-    content: Vec<Content>,
-}
-
-#[derive(Deserialize, Debug)]
-struct Content {
-    text: String,
 }
 
 fn main() -> Result<()> {
@@ -51,17 +62,17 @@ fn main() -> Result<()> {
     let chat_request = ChatRequest::new(input);
 
     let openai_api_key = env::var("OPENAI_API_KEY")?;
-    let mut response = ureq::post("https://api.openai.com/v1/responses")
+    let mut response = ureq::post("https://api.openai.com/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", openai_api_key))
         .header("Content-Type", "application/json")
         .send_json(chat_request)?;
 
     let response = response
         .body_mut()
-        .read_json::<Response>()?;
+        .read_json::<ChatResponse>()?;
 
-    let text = response.text()?; 
-    termimad::print_inline(&text);
+    let chat_response = response.first()?;
+    termimad::print_inline(&chat_response);
 
     Ok(())
 }
