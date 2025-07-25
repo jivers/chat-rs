@@ -1,57 +1,8 @@
 use std::env;
-use anyhow::{Context, Result};
-use serde::{Serialize, Deserialize};
+use anyhow::Result;
 use ureq;
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "lowercase")]
-enum Role {
-    Developer,
-    User,
-    Assistant,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Message {
-    role: Role,
-    content: String,
-}
-
-#[derive(Serialize, Debug)]
-struct ChatRequest {
-    model: String,
-    messages: Vec<Message>,
-}
-
-impl ChatRequest {
-    fn new(content: String) -> ChatRequest {
-        ChatRequest {
-            model: "gpt-4.1".to_string(),
-            messages: vec![Message {
-                role: Role::User,
-                content,
-            }]
-        }
-    }
-
-}
-
-#[derive(Deserialize, Debug)]
-struct Choice {
-    message: Message,
-}
-
-#[derive(Deserialize, Debug)]
-struct ChatResponse {
-    choices: Vec<Choice>,
-}
-
-impl ChatResponse {
-    fn first(&self) -> Result<String> {
-        let first_choice = self.choices.get(0).context("no first choice exists")?;
-        Ok(first_choice.message.content.clone())
-    }
-}
+pub mod chat;
+use chat::{ChatRequest, ChatResponse};
 
 fn main() -> Result<()> {
     let input = match env::args().nth(1) {
