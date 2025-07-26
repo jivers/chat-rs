@@ -1,5 +1,36 @@
+use std::env;
+use ureq;
 use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
+
+pub struct Chat {
+    // todo add message history
+    model: String,
+}
+
+impl Chat {
+    pub fn new(model: &str) -> Chat {
+        Chat {
+            model: model.to_string(),
+        }
+    }
+
+    pub fn send(&self, content: &String) -> Result<ChatResponse> {
+        let chat_request = ChatRequest::new(&self.model, content);
+        let openai_api_key = env::var("OPENAI_API_KEY")?;
+
+        let mut response = ureq::post("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", openai_api_key))
+            .header("Content-Type", "application/json")
+            .send_json(chat_request)?;
+
+        let response = response
+            .body_mut()
+            .read_json::<ChatResponse>()?;
+
+        Ok(response)
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
@@ -22,16 +53,15 @@ pub struct ChatRequest {
 }
 
 impl ChatRequest {
-    pub fn new(content: String) -> ChatRequest {
+    pub fn new(model: &String, content: &String) -> ChatRequest {
         ChatRequest {
-            model: "gpt-4.1".to_string(),
+            model: model.clone(),
             messages: vec![Message {
                 role: Role::User,
-                content,
+                content: content.to_string(),
             }]
         }
     }
-
 }
 
 #[derive(Deserialize, Debug)]
