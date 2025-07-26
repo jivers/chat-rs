@@ -9,10 +9,11 @@ fn main() -> Result<()> {
         None => "gimme the beat boy".to_string(),
     };
 
-    let chat = Chat::new("gpt-4o"); 
+    let mut chat = Chat::new("gpt-4o"); 
     let response = chat.send(&input)?;
-    let content = response.first()?;
-    termimad::print_inline(&content);
+    let message = response.first()?;
+
+    termimad::print_inline(&message.content);
 
     Ok(())
 }
