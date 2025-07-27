@@ -12,20 +12,15 @@ fn get_response(chat: &mut Chat, prompt: String) -> Result<String> {
 
 fn main() -> Result<()> {
     let mut chat = Chat::new("gpt-4o"); 
-    let prompt = env::args().collect::<Vec<String>>()[1..].join(" "); 
-    if prompt.len() > 0 {
-        let prompt_display = format!("
-```
-{}
-```
+    let args: Vec<String> = env::args().skip(1).collect();
 
-", prompt);
-        termimad::print_text(&prompt_display);
-
+    if args.len() > 0 {
+        let prompt = args.join(" ");
         let response = get_response(&mut chat, prompt)?;
         termimad::print_text(&response);
+        return Ok(());
     }
-
+    
     loop {
         let prompt = Text::new("Prompt:").prompt()?;
         let response = get_response(&mut chat, prompt)?; 
