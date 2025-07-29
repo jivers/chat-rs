@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
 
 pub struct Chat {
-    // todo add message history
     model: String,
     messages: Vec<Message>,
 }
@@ -17,7 +16,7 @@ impl Chat {
         }
     }
 
-    pub fn send(&mut self, content: &String) -> Result<ChatResponse> {
+    pub fn send(&mut self, content: &str) -> Result<ChatResponse> {
         let message = Message::new(Role::User, content);
         self.messages.push(message);
 
@@ -39,10 +38,15 @@ impl Chat {
         Ok(response)
     }
 
+    pub fn add_message(&mut self, message: Message) {
+        self.messages.push(message);
+    }
+
     pub fn print_messages(&self) {
         dbg!(&self.messages);
     }
 }
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -59,10 +63,10 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn new(role: Role, content: &String) -> Message {
+    pub fn new(role: Role, content: &str) -> Message {
         Message {
             role,
-            content: content.clone(),
+            content: content.to_string(),
         }
     }
 }

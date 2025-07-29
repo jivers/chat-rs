@@ -1,7 +1,7 @@
 use std::env;
 use anyhow::Result;
 use inquire::Text;
-use chat::Chat;
+use chat::{Chat, Message, Role};
 pub mod chat;
 
 fn get_response(chat: &mut Chat, prompt: String) -> Result<String> {
@@ -11,7 +11,9 @@ fn get_response(chat: &mut Chat, prompt: String) -> Result<String> {
 }
 
 fn main() -> Result<()> {
-    let mut chat = Chat::new("gpt-4o"); 
+    let mut chat = Chat::new("gpt-4o");
+    chat.add_message(Message::new(Role::Developer, "you are a helpful terminal-based agent")); 
+
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.len() > 0 {
