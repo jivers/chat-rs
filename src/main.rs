@@ -1,8 +1,7 @@
 use std::env;
 use anyhow::Result;
 use inquire::Text;
-use chat::{Chat, Message, Role};
-use assistant::{Action};
+use chat::{Chat};
 use atty::Stream;
 use std::io::{self, Read};
 use termimad::print_text;
@@ -10,42 +9,46 @@ use termimad::print_text;
 pub mod chat;
 pub mod assistant;
 
-fn get_response(chat: &mut Chat, prompt: String) -> Result<String> {
-    let response = chat.send(&prompt)?;
-    let message = response.first()?;
-    Ok(message.content.clone())
+fn respond(chat: &mut Chat, prompt: String) -> Result<()> {
+    let response = chat.send(&prompt)?
+        .first()?
+        .content
+        .clone();
+
+    print_text(&response);
+    Ok(())
 }
 
 fn main() -> Result<()> {
-    let mut prompt = String::new();
     let mut chat = Chat::new("gpt-4o");
 
-    // handle pipe input
-    if atty::is(Stream::Stdin) {
-        let args: Vec<String> = env::args().skip(1).collect();
-        if args.len() > 0 {
-            prompt = args.join(" ");
-            let response = get_response(&mut chat, prompt)?;
-            print_text(&response);
-            return Ok(());
+    let args: Vec<String> = env::args().skip(1).collect();
+    let is_pipe = !atty::is(Stream::Stdin);
+    let has_args = args.len() > 0; 
+
+    match (is_pipe, has_args) {
+        (true, true) => {
+            let mut buffer = String::new();
+            io::stdin().read_to_string(&mut buffer)?;
+
+            let prompt = format!("{} \n --- \n {}", buffer, args.join(" "));
+            return respond(&mut chat, prompt)
+        },
+        (true, false) => {
+            let mut prompt = String::new();
+            io::stdin().read_to_string(&mut prompt)?;
+
+            return respond(&mut chat, prompt)
+        },
+        (false, true) => {
+            let prompt = args.join(" ");
+            return respond(&mut chat, prompt)
+        },
+        _ => {
+            loop {
+                let prompt = Text::new("Prompt:").prompt()?;
+                return respond(&mut chat, prompt)
+            }
         }
-    }; 
-
-
-    // handle stdin
-    if atty::isnt(Stream::Stdin) {
-         io::stdin().read_to_string(&mut prompt)?;
-         let response = get_response(&mut chat, prompt)?;
-         print_text(&response); 
-         return Ok(())
-     };
-
-
-    // handle interactive chat
-    loop {
-        let prompt = Text::new("Prompt:").prompt()?;
-        let response = get_response(&mut chat, prompt)?; 
-    
-        termimad::print_text(&response);
     }
 }
