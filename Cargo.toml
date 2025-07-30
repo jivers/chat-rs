@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.98"
+atty = "0.2.14"
 inquire = "0.7.5"
 serde = { version = "1.0.219", features = ["derive"] }
 termimad = "0.33.0"
