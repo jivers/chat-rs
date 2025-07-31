@@ -75,7 +75,12 @@ mod tests {
 
     #[test]
     fn exec_ffmpeg() {
-        let result = ExecFfmpeg::process(IO::Command("ffmpeg -i /Users/jivers/Dev/chat-rs/test/content/test.wav -c:a aac -b:a 192k /Users/jivers/Dev/chat-rs/test/content/test.m4a".to_string()));
+        let input_path = std::path::Path::new("test/content/test.wav");
+        let output_path = std::path::Path::new("test/content/test.m4a");
+        let command = format!("ffmpeg -i {} -c:a aac -b:a 192k {}", input_path.to_str().unwrap(), output_path.to_str().unwrap());
+        let result = ExecFfmpeg::process(IO::Command(command));
+        let _ = std::fs::remove_file(output_path);
+
         assert!(result.is_ok(), "ExecFfmpeg failed: {:?}", result);
 
     }
