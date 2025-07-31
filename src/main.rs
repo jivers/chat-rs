@@ -7,7 +7,7 @@ use std::io::{self, Read};
 use termimad::print_text;
 
 pub mod chat;
-pub mod assistant;
+pub mod action;
 
 fn respond(chat: &mut Chat, prompt: String) -> Result<()> {
     let response = chat.send(&prompt)?
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         _ => {
             loop {
                 let prompt = Text::new("Prompt:").prompt()?;
-                return respond(&mut chat, prompt)
+                respond(&mut chat, prompt)?;
             }
         }
     }
