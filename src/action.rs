@@ -25,34 +25,18 @@ trait Action {
     fn process(input: IO) -> Result<IO>;
 }
 
-struct Ls;
-impl Action for Ls {
-    fn process(_input: IO) -> Result<IO> {
-        let output = Command::new("ls")
-            .arg("-l")
-            .output()?;
-
-        let ls_context = String::from_utf8(output.stdout)?;
-        Ok(IO::Context(ls_context))
-    }
-}
-
-struct DraftFfmpeg;
-
-struct ValidateFfmpeg;  
-
-struct ExecFfmpeg;
-impl Action for ExecFfmpeg {
+struct Exec;
+impl Action for Exec {
     fn process(input: IO) -> Result<IO> {
         match input {
             IO::Command(command) => {
                 let args = shell_words::split(&command)?;
-                let mut cmd = Command::new("ffmpeg");
-                cmd.args(&args[1..]);
-                let _ = cmd.output();
-
-                // TODO print results
-                // handle error
+                let mut cmd = Command::new(&args[0]);
+                let status = cmd.args(&args[1..]).status()?;
+                
+                if !status.success() {
+                    return Err(anyhow::anyhow!("failed to exec command: {}", command))
+                }
             },
             _ => return Err(anyhow::anyhow!("ExecFfmpeg only takes IO::Command"))
         }
@@ -66,22 +50,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ls() {
-        let input = IO::Prompt("List all files in the current directory".to_string());
-        if let Ok(ls_value) = Ls::process(input) {
-            println!("{:?}", ls_value);
-        };
-    }
-
-    #[test]
     fn exec_ffmpeg() {
         let input_path = std::path::Path::new("test/content/test.wav");
         let output_path = std::path::Path::new("test/content/test.m4a");
         let command = format!("ffmpeg -i {} -c:a aac -b:a 192k {}", input_path.to_str().unwrap(), output_path.to_str().unwrap());
-        let result = ExecFfmpeg::process(IO::Command(command));
+        let result = Exec::process(IO::Command(command));
         let _ = std::fs::remove_file(output_path);
 
         assert!(result.is_ok(), "ExecFfmpeg failed: {:?}", result);
+
+    }
+
+    #[test]
+    fn exec_ffmpeg_failed() {
+        let input_path = std::path::Path::new("test/content/test.wav");
+        let output_path = std::path::Path::new("test/content/test.m4a");
+        let command = format!("ffmpg i {} -ca ac -b:a 19k {}", input_path.to_str().unwrap(), output_path.to_str().unwrap());
+        let result = Exec::process(IO::Command(command));
+
+        assert!(!result.is_ok(), "ExecFfmpeg failed: {:?}", result);
 
     }
 }
