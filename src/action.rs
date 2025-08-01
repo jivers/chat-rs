@@ -30,13 +30,20 @@ struct Draft;
 impl Action for Draft {
     fn process(input: IO) -> Result<IO> {
         if let IO::Prompt(prompt) = input {
-            let mut chat = Chat::new("o4-mini-high");
+            let mut chat = Chat::new("o4-mini");
             chat.add_dev_message("You are a useful terminal agent that generates only single commands that are executable in a unix or linux terminal");
 
             let prompt = format!("Generate a single command, no explanation, to: {}", prompt);
             let response = chat.send(&prompt)?;
+            println!("{:?}", response);
             let content = response.first()?.content;
-            let command = content.split("\n").nth(1).context("unable to extract command from Message content")?;
+            let split: Vec<_> = content.split("\n").collect();
+            
+            // might have ``` or might just be the command
+            let command = match split.len() {
+                1 => split.first(),
+                _ => split.get(2),
+            }.context("unable to extract command from Message content")?;
 
             return Ok(IO::Command(command.to_string()))
 
@@ -69,6 +76,15 @@ impl Action for Exec {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn draft_ffmpeg_command() {
+        let prompt = IO::Prompt("convert test/content/test.wav to m4a using the same name".to_string());
+        let command = Draft::process(prompt);
+        println!("{:?}", command);
+
+        assert!(command.is_ok(), "Draft prompt failed");
+    }
 
     #[test]
     fn exec_ffmpeg() {
