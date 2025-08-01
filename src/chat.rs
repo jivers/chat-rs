@@ -3,6 +3,28 @@ use ureq;
 use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    Developer,
+    User,
+    Assistant,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Message {
+    pub role: Role,
+    pub content: String,
+}
+
+impl Message {
+    pub fn new(role: Role, content: &str) -> Message {
+        Message {
+            role,
+            content: content.to_string(),
+        }
+    }
+}
 pub struct Chat {
     model: String,
     messages: Vec<Message>,
@@ -42,34 +64,21 @@ impl Chat {
         self.messages.push(message);
     }
 
+    pub fn add_user_message(&mut self, content: &str) {
+        self.messages.push(Message::new(Role::User, content));
+    }
+
+    pub fn add_dev_message(&mut self, content: &str) {
+        self.messages.push(Message::new(Role::Developer, content));
+    }
+
+    // I should really just implement a custom debug or display trait here! 
     pub fn print_messages(&self) {
         dbg!(&self.messages);
     }
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum Role {
-    Developer,
-    User,
-    Assistant,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Message {
-    pub role: Role,
-    pub content: String,
-}
-
-impl Message {
-    pub fn new(role: Role, content: &str) -> Message {
-        Message {
-            role,
-            content: content.to_string(),
-        }
-    }
-}
 
 #[derive(Serialize, Debug)]
 pub struct ChatRequest<'a> {
