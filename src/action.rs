@@ -60,9 +60,9 @@ impl Action for Exec {
             IO::Command(command) => {
                 let args = shell_words::split(&command)?;
                 let mut cmd = Command::new(&args[0]);
-                let status = cmd.args(&args[1..]).status()?;
-                
-                if !status.success() {
+                let results = cmd.args(&args[1..]).output()?;
+
+                if !results.status.success() {
                     return Err(anyhow!("failed to exec command: {}", command))
                 }
             },
