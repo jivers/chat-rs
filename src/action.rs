@@ -22,6 +22,8 @@ enum IO {
     None,
 }
 
+// maybe I migrate to trait of Node
+// and struct of action
 trait Action {
     fn process(input: IO) -> Result<IO>;
 }
@@ -35,7 +37,6 @@ impl Action for Draft {
 
             let prompt = format!("Generate a single command, no explanation, to: {}", prompt);
             let response = chat.send(&prompt)?;
-            println!("{:?}", response);
             let content = response.first()?.content;
             let split: Vec<_> = content.split("\n").collect();
             
@@ -51,6 +52,28 @@ impl Action for Draft {
             return Err(anyhow!("Draft only takes IO::Prompt"))
         }
     } 
+}
+
+struct Validate;
+impl Action for Validate {
+    fn process(input: IO) -> Result<IO> {
+        if let IO::Command(command) = input {
+            let mut chat = Chat::new("o4-mini");
+            chat.add_dev_message("You are highly discerning agent who validates whether or not terminal commands are executable or not. You say 'true' if it's valid and 'false' if it's not");
+
+            let prompt = format!("Is this a valid command: {}?", command);
+            let response = chat.send(&prompt)?;
+            let content = response.first()?.content;
+
+            if content == "false" {
+                return Err(anyhow!("Command is invalid"))
+            }
+
+            return Ok(IO::Command(command))
+        } else {
+            return Err(anyhow!("Validate only takse IO::Prompt"))
+        }
+    }
 }
 
 struct Exec;
@@ -118,6 +141,14 @@ mod tests {
         assert!(result.is_ok(), "Exec failed: {:?}", result);
     }
 
+    #[test]
+    fn invalid_ffmpeg_command() {
+        let input_path = std::path::Path::new("test/content/test.wav");
+        let output_path = std::path::Path::new("test/content/test.m4a");
+        let command = format!("ffmpg i {} -ca ac -b:a 19k {}", input_path.to_str().unwrap(), output_path.to_str().unwrap());
+        let validated_command = Validate::process(IO::Command(command));
 
+        assert!(!validated_command.is_ok(), "Validation failed: {:?}", validated_command);
+    }
 }
 
