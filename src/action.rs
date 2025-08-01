@@ -65,11 +65,12 @@ impl Action for Exec {
                 if !results.status.success() {
                     return Err(anyhow!("failed to exec command: {}", command))
                 }
+
+                let context = String::from_utf8(results.stdout)?;
+                return Ok(IO::Context(context.to_owned()))
             },
             _ => return Err(anyhow!("Exec only takes IO::Command"))
         }
-
-        Ok(IO::None)
     }
 }
 
@@ -105,8 +106,18 @@ mod tests {
         let command = format!("ffmpg i {} -ca ac -b:a 19k {}", input_path.to_str().unwrap(), output_path.to_str().unwrap());
         let result = Exec::process(IO::Command(command));
 
-        assert!(!result.is_ok(), "ExecFfmpeg failed: {:?}", result);
-
+        assert!(!result.is_ok(), "Exec failed: {:?}", result);
     }
+
+    #[test]
+    fn ffmpeg_chain() {
+        let prompt = IO::Prompt("convert test/content/test.wav to m4a using the same name".to_string());
+        let command = Draft::process(prompt).unwrap();
+        let result = Exec::process(command);
+
+        assert!(result.is_ok(), "Exec failed: {:?}", result);
+    }
+
+
 }
 
