@@ -10,8 +10,9 @@
 // 3. Validate that the Command is safe to execute
 // 4. Execute Command
 use std::process::Command;
-use anyhow::Result;
+use anyhow::{Result, anyhow, Context};
 use shell_words;
+use crate::chat::Chat;
 
 #[derive(Debug)]
 enum IO {
@@ -25,6 +26,26 @@ trait Action {
     fn process(input: IO) -> Result<IO>;
 }
 
+struct Draft;
+impl Action for Draft {
+    fn process(input: IO) -> Result<IO> {
+        if let IO::Prompt(prompt) = input {
+            let mut chat = Chat::new("o4-mini-high");
+            chat.add_dev_message("You are a useful terminal agent that generates only single commands that are executable in a unix or linux terminal");
+
+            let prompt = format!("Generate a single command, no explanation, to: {}", prompt);
+            let response = chat.send(&prompt)?;
+            let content = response.first()?.content;
+            let command = content.split("\n").nth(1).context("unable to extract command from Message content")?;
+
+            return Ok(IO::Command(command.to_string()))
+
+        } else {
+            return Err(anyhow!("Draft only takes IO::Prompt"))
+        }
+    } 
+}
+
 struct Exec;
 impl Action for Exec {
     fn process(input: IO) -> Result<IO> {
@@ -35,10 +56,10 @@ impl Action for Exec {
                 let status = cmd.args(&args[1..]).status()?;
                 
                 if !status.success() {
-                    return Err(anyhow::anyhow!("failed to exec command: {}", command))
+                    return Err(anyhow!("failed to exec command: {}", command))
                 }
             },
-            _ => return Err(anyhow::anyhow!("ExecFfmpeg only takes IO::Command"))
+            _ => return Err(anyhow!("Exec only takes IO::Command"))
         }
 
         Ok(IO::None)
