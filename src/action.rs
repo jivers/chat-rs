@@ -22,6 +22,10 @@ enum IO {
     None,
 }
 
+trait Node {
+    fn process(&self, input: IO) -> Result<IO>;
+}
+
 #[derive(Debug)]
 enum Action {
     Draft,
@@ -29,7 +33,7 @@ enum Action {
     Exec,
 }
 
-impl Action {
+impl Node for Action {
     fn process(&self, input: IO) -> Result<IO> {
         match self {
             Action::Draft => draft(input),
@@ -37,6 +41,29 @@ impl Action {
             Action::Exec => exec(input),
             _ => Err(anyhow!("Unable to process action {:?} for input {:?}", self, input)),
         }
+    }
+}
+
+struct Chain {
+    actions: Vec<Action>,
+}
+
+impl Chain {
+    fn new(actions: Vec<Action>) -> Chain {
+        return Chain {
+            actions
+        }
+    }
+}
+
+impl Node for Chain {
+    fn process(&self, input: IO) -> Result<IO> {
+        let mut result = input;
+        for action in self.actions.iter() {
+            result = action.process(result)?;
+        }
+
+        Ok(result)
     }
 }
 
@@ -152,6 +179,15 @@ mod tests {
         let validated_command = Action::Validate.process(IO::Command(command));
 
         assert!(!validated_command.is_ok(), "Validation failed: {:?}", validated_command);
+    }
+
+    #[test]
+    fn sucessful_chain_execution() {
+        let prompt = IO::Prompt("convert test/content/test.wav to mp3 using the same name and convert to mono".to_string());
+        let chain = Chain::new(vec![Action::Draft, Action::Validate, Action::Exec]);
+        let result = chain.process(prompt);
+
+        assert!(result.is_ok(), "Execution of chain failed");
     }
 }
 
