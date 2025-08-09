@@ -1,40 +1,38 @@
 use serde::Serialize;
+use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
-enum JsonType {
+pub enum JsonType {
     String,
     Number,
     Integer,
     Boolean,
 }
 
-
-#[derive(Serialize)]
-struct Parameter {
-    type: JsonType,
-    description: &str,
+#[derive(Serialize, Debug, Clone)]
+pub struct Property {
+    #[serde(rename = "type")]
+    pub r#type: JsonType,
+    pub description: String,
 
     // enum type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    enum: Option<Vec<&str>>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "enum")]
+    pub r#enum: Option<Vec<String>>,
 }
 
-#[derive(Serialize)]
-struct FunctionBuilder {
-    name: String,
-    description: &str,
-    properties: Properties,
+#[derive(Serialize, Debug, Clone)]
+pub struct Parameters {
+    #[serde(rename = "type", default = "object")]
+    pub r#type: String,
+    pub properties: HashMap<String, Property>,
+    pub required: Vec<String>,
 }
 
-pub fn_select_chain = Function {
-    name: "select_terminal_tool",
-    description: "Check a prompt and see if a tool should be selected",
-    properties: {
-        tool : {
-            type: String,
-            description: "The command line tool to use",
-            enum: Some(vec!["ffmpeg", "ls"]), 
-        }
-    }
+#[derive(Serialize, Debug, Clone)]
+pub struct Function {
+    pub name: String,
+    pub description: String,
+    pub parameters: Parameters,
 }
+

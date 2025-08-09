@@ -2,6 +2,7 @@ use std::env;
 use ureq;
 use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
+use crate::tool::{Tool};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -28,6 +29,7 @@ impl Message {
 pub struct Chat {
     model: String,
     messages: Vec<Message>,
+    tools: Vec<Tool>,
 }
 
 impl Chat {
@@ -35,6 +37,7 @@ impl Chat {
         Chat {
             model: model.to_string(),
             messages: Vec::<Message>::new(),
+            tools: Vec::<Tool>::new(),
         }
     }
 
@@ -42,7 +45,7 @@ impl Chat {
         let message = Message::new(Role::User, content);
         self.messages.push(message);
 
-        let chat_request = ChatRequest::new(&self.model, &self.messages);
+        let chat_request = ChatRequest::new(&self.model, &self.messages, self.tools.clone());
         let openai_api_key = env::var("OPENAI_API_KEY")?;
 
         let mut response = ureq::post("https://api.openai.com/v1/chat/completions")
@@ -62,6 +65,10 @@ impl Chat {
 
     pub fn add_message(&mut self, message: Message) {
         self.messages.push(message);
+    }
+
+    pub fn add_tool(&mut self, tool: Tool) {
+        self.tools.push(tool);
     }
 
     pub fn add_user_message(&mut self, content: &str) {
@@ -84,13 +91,16 @@ impl Chat {
 pub struct ChatRequest<'a> {
     model: &'a str,
     messages: &'a [Message], 
+
+    tools: Vec<Tool>,
 }
 
 impl<'a> ChatRequest<'a> {
-    pub fn new(model: &'a str, messages: &'a [Message]) -> ChatRequest<'a> {
+    pub fn new(model: &'a str, messages: &'a [Message], tools: Vec<Tool>) -> ChatRequest<'a> {
         ChatRequest {
             model,
             messages,
+            tools: tools,
         }
     }
 }
