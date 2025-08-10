@@ -2,6 +2,7 @@ use std::env;
 use ureq;
 use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
+use termimad::print_text;
 use crate::tool::{Tool, ToolCall};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -65,6 +66,21 @@ impl Chat {
         Ok(response)
     }
 
+    pub fn complete(&mut self, prompt: String) -> Result<()> { // should return String
+        let response = self.send(&prompt)?
+            .first()?;
+
+        if let Some(content) = response.content {
+            print_text(&content);
+        }
+
+        if let Some(tool_calls) = response.tool_calls {
+            println!("{:?}", tool_calls);
+        }
+
+        return Ok(())
+    }
+
     pub fn add_message(&mut self, message: Message) {
         self.messages.push(message);
     }
@@ -102,7 +118,7 @@ impl<'a> ChatRequest<'a> {
         ChatRequest {
             model,
             messages,
-            tools: tools,
+            tools,
         }
     }
 }

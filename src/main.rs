@@ -15,21 +15,6 @@ pub mod action;
 pub mod function;
 pub mod tool;
 
-fn respond(chat: &mut Chat, prompt: String) -> Result<()> {
-    let response = chat.send(&prompt)?
-        .first()?;
-
-    if let Some(content) = response.content {
-        todo!()
-    }
-
-    if let Some(tool_calls) = response.tool_calls {
-        todo!()
-    }
-
-    return Ok(())
-}
-
 fn main() -> Result<()> {
     let mut props = HashMap::new();
     props.insert("tool".to_string(), Property {
@@ -58,28 +43,33 @@ fn main() -> Result<()> {
     let is_pipe = !atty::is(Stream::Stdin);
     let has_args = args.len() > 0; 
 
+    // todo: this could get cleaned up
     match (is_pipe, has_args) {
+        // pipe with prompt
         (true, true) => {
             let mut buffer = String::new();
             io::stdin().read_to_string(&mut buffer)?;
 
             let prompt = format!("{} \n --- \n {}", buffer, args.join(" "));
-            return respond(&mut chat, prompt)
+            return chat.complete(prompt)
         },
+        // pipe no prompt
         (true, false) => {
             let mut prompt = String::new();
             io::stdin().read_to_string(&mut prompt)?;
 
-            return respond(&mut chat, prompt)
+            return chat.complete(prompt)
         },
+        // just prompt (as args)
         (false, true) => {
             let prompt = args.join(" ");
-            return respond(&mut chat, prompt)
+            return chat.complete(prompt)
         },
+        // interactive chat mode
         _ => {
             loop {
                 let prompt = Text::new("Prompt:").prompt()?;
-                respond(&mut chat, prompt)?;
+                chat.complete(prompt)?;
             }
         }
     }
