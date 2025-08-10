@@ -17,12 +17,17 @@ pub mod tool;
 
 fn respond(chat: &mut Chat, prompt: String) -> Result<()> {
     let response = chat.send(&prompt)?
-        .first()?
-        .content
-        .clone();
+        .first()?;
 
-    print_text(&response);
-    Ok(())
+    if let Some(content) = response.content {
+        todo!()
+    }
+
+    if let Some(tool_calls) = response.tool_calls {
+        todo!()
+    }
+
+    return Ok(())
 }
 
 fn main() -> Result<()> {

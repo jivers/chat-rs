@@ -2,7 +2,7 @@ use std::env;
 use ureq;
 use anyhow::{Context, Result};
 use serde::{Serialize, Deserialize};
-use crate::tool::{Tool};
+use crate::tool::{Tool, ToolCall};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -15,14 +15,16 @@ pub enum Role {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Message {
     pub role: Role,
-    pub content: String,
+    pub content: Option<String>,
+    pub tool_calls: Option<Vec<ToolCall>>,
 }
 
 impl Message {
     pub fn new(role: Role, content: &str) -> Message {
         Message {
             role,
-            content: content.to_string(),
+            content: Some(content.to_string()),
+            tool_calls: None,
         }
     }
 }

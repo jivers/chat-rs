@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Debug, Clone)]
@@ -36,3 +36,8 @@ pub struct Function {
     pub parameters: Parameters,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct FunctionCall {
+    name: String,
+    arguments: String,
+}
