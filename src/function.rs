@@ -36,7 +36,7 @@ pub struct Function {
     pub parameters: Parameters,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunctionCall {
     name: String,
     arguments: String,

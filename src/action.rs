@@ -75,16 +75,21 @@ fn draft(input: IO) -> Result<IO> {
         let prompt = format!("Generate a single command, no explanation, to: {}", prompt);
         let response = chat.send(&prompt)?;
         let content = response.first()?.content;
-        let split: Vec<_> = content.split("\n").collect();
-        
-        // might have ``` or might just be the command
-        let command = match split.len() {
-            1 => split.first(),
-            _ => split.get(2),
-        }.context("unable to extract command from Message content")?;
 
-        return Ok(IO::Command(command.to_string()))
+        match content {
+            Some(c) => {
+                let split: Vec<_> = c.split("\n").collect();
+                
+                // might have ``` or might just be the command
+                let command = match split.len() {
+                    1 => split.first(),
+                    _ => split.get(2),
+                }.context("unable to extract command from Message content")?;
 
+                return Ok(IO::Command(command.to_string()))
+            },
+            None => return Err(anyhow!("Ooops this means content is none")),
+        }
     } else {
         return Err(anyhow!("Draft only takes IO::Prompt"))
     } 
@@ -99,9 +104,11 @@ fn validate(input: IO) -> Result<IO> {
         let response = chat.send(&prompt)?;
         let content = response.first()?.content;
 
-        if content == "false" {
-            return Err(anyhow!("Command is invalid"))
-        }
+        if let Some(c) = content {
+            if c== "false" {
+                return Err(anyhow!("Command is invalid"))
+            }
+        };
 
         return Ok(IO::Command(command))
     } else {
