@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use clap::{Parser, Subcommand};
 use anyhow::Result;
 use inquire::Text;
 use chat::{Chat};
@@ -11,14 +12,19 @@ pub mod action;
 pub mod function;
 pub mod tool;
 
-fn main() -> Result<()> {
-    let mut props = HashMap::new();
-    props.insert("tool".to_string(), Property {
-        r#type: JsonType::String,
-        description: "the cli tool to choose".to_string(),
-        r#enum: Some(vec!["ffmpeg".into(), "ls".into()]),
-    });
+#[derive(Parser)]
+#[command(name = "chatrs", version, about)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+#[derive(Subcommand)]
+enum Commands {
+    New
+}
 
+fn main() -> Result<()> {
+    // create tool chooser
     let tool_chooser = Tool {
         r#type: ToolType::Function,
         function: Some(Function {
@@ -26,17 +32,26 @@ fn main() -> Result<()> {
             description: "choose the best cli tool to get the job done".to_string(),
             parameters: Parameters {
                 r#type: "object".to_string(),
-                properties: props,
-                required: vec!["tools".into()],
+                properties: HashMap::from([("tool".to_string(), Property {
+                    r#type: JsonType::String,
+                    description: "the cli tool to choose".to_string(),
+                    r#enum: Some(vec!["ffmpeg".into(), "ls".into()]),
+                })]),
+                required: vec!["tool".into()],
             },
         }),
     };
 
-    let mut chat = Chat::new("gpt-4o");
-    chat.add_tool(tool_chooser);
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::New => {
+            let mut chat = Chat::new("gpt-5");
+            chat.add_tool(tool_chooser);
 
-    loop {
-        let prompt = Text::new("Prompt:").prompt()?;
-        chat.complete(prompt)?;
+            loop {
+                let prompt = Text::new("Prompt:").prompt()?;
+                chat.complete(prompt)?;
+            }
+        }
     }
 }
