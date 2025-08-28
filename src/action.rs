@@ -70,7 +70,7 @@ impl Node for Chain {
 fn draft(input: IO) -> Result<IO> {
     if let IO::Prompt(prompt) = input {
         let mut chat = Chat::new("o4-mini");
-        chat.add_dev_message("You are a useful terminal agent that generates only single commands that are executable in a unix or linux terminal");
+        chat.add_system_message("You are a useful terminal agent that generates only single commands that are executable in a unix or linux terminal");
 
         let prompt = format!("Generate a single command, no explanation, to: {}", prompt);
         let response = chat.send(&prompt)?;
@@ -98,7 +98,7 @@ fn draft(input: IO) -> Result<IO> {
 fn validate(input: IO) -> Result<IO> {
     if let IO::Command(command) = input {
         let mut chat = Chat::new("o4-mini");
-        chat.add_dev_message("You are highly discerning agent who validates whether or not terminal commands are executable or not. You say 'true' if it's valid and 'false' if it's not");
+        chat.add_system_message("You are highly discerning agent who validates whether or not terminal commands are executable or not. You say 'true' if it's valid and 'false' if it's not");
 
         let prompt = format!("Is this a valid command: {}?", command);
         let response = chat.send(&prompt)?;

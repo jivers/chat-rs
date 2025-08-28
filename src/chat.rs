@@ -8,7 +8,7 @@ use crate::tool::{Tool, ToolCall};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
-    Developer,
+    System,
     User,
     Assistant,
 }
@@ -93,12 +93,19 @@ impl Chat {
         self.messages.push(Message::new(Role::User, content));
     }
 
-    pub fn add_dev_message(&mut self, content: &str) {
-        self.messages.push(Message::new(Role::Developer, content));
+    pub fn add_system_message(&mut self, content_str: &str) {
+        self.messages.push(Message::new(Role::System, content_str));
+    }
+
+    pub fn get_messages_string(&self) -> Result<String> {
+        let messages_string = serde_json::to_string(&self.messages)?;
+        Ok(messages_string)
     }
 
     // I should really just implement a custom debug or display trait here! 
     pub fn print_messages(&self) {
+        let message_string = serde_json::to_string(&self.messages).unwrap(); 
+        println!("{:?}", message_string);
         dbg!(&self.messages);
     }
 }

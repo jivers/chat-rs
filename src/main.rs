@@ -6,6 +6,7 @@ use chat::{Chat};
 use tool::ToolType;
 use function::{Function, Parameters, Property, JsonType};
 use tool::Tool;
+use std::io::Write;
 
 pub mod chat;
 pub mod action;
@@ -48,9 +49,30 @@ fn main() -> Result<()> {
             let mut chat = Chat::new("gpt-5");
             chat.add_tool(tool_chooser);
 
+            let now = chrono::Local::now();
+
+            let chat_path = dirs::data_local_dir()
+                .expect("unable to locate local app dir")
+                .join(format!("chatrs/{:?}.json", now));
+
+            // todo this is ugly
+            std::fs::create_dir_all(dirs::data_local_dir()
+                .expect("unable to locate local data dir")
+                .join("chatrs"))?;
+
+            let mut log_file = std::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(chat_path)?;
+
+
             loop {
                 let prompt = Text::new("Prompt:").prompt()?;
                 chat.complete(prompt)?;
+
+                let chat_string = chat.get_messages_string()?;
+                write!(&mut log_file, "{}", chat_string);
             }
         }
     }
