@@ -7,6 +7,7 @@ use tool::ToolType;
 use function::{Function, Parameters, Property, JsonType};
 use tool::Tool;
 use std::io::Write;
+use std::fs;
 
 pub mod chat;
 pub mod action;
@@ -21,7 +22,8 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Commands {
-    New
+    New,
+    Last,
 }
 
 fn main() -> Result<()> {
@@ -44,21 +46,22 @@ fn main() -> Result<()> {
     };
 
     let cli = Cli::parse();
+    let local_storage_dir = dirs::data_local_dir()
+        .expect("unable to locate local app dir")
+        .join("chatrs");
+
+    if !local_storage_dir.exists() {
+        fs::create_dir_all(dirs::data_local_dir()
+            .expect("unable to locate local data dir")
+            .join("chatrs"))?;
+    }
+
     match cli.command {
         Commands::New => {
             let mut chat = Chat::new("gpt-5");
             chat.add_tool(tool_chooser);
 
-            let now = chrono::Local::now();
-
-            let chat_path = dirs::data_local_dir()
-                .expect("unable to locate local app dir")
-                .join(format!("chatrs/{:?}.json", now));
-
-            // todo this is ugly
-            std::fs::create_dir_all(dirs::data_local_dir()
-                .expect("unable to locate local data dir")
-                .join("chatrs"))?;
+            let chat_path = local_storage_dir.join(format!("{:?}.json", chrono::Local::now()));
 
             let mut log_file = std::fs::OpenOptions::new()
                 .create(true)
@@ -74,6 +77,12 @@ fn main() -> Result<()> {
                 let chat_string = chat.get_messages_string()?;
                 write!(&mut log_file, "{}", chat_string);
             }
+        },
+        Commands::Last => {
+            for entry in fs::read_dir(&local_storage_dir)? {
+                dbg!(entry);
+            }
+            Ok(())
         }
     }
 }
